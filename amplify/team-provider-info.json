@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-golfbookingapp-dev-72f30-authRole",
+      "UnauthRoleArn": "arn:aws:iam::905444444452:role/amplify-golfbookingapp-dev-72f30-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::905444444452:role/amplify-golfbookingapp-dev-72f30-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-golfbookingapp-dev-72f30-deployment",
+      "UnauthRoleName": "amplify-golfbookingapp-dev-72f30-unauthRole",
+      "StackName": "amplify-golfbookingapp-dev-72f30",
+      "StackId": "arn:aws:cloudformation:us-east-2:905444444452:stack/amplify-golfbookingapp-dev-72f30/9c077980-54fd-11f0-81b6-0ab438b0ea25",
+      "AmplifyAppId": "dugn9m5ju8qjr"
+    },
+    "categories": {
+      "auth": {
+        "golfbookingappadadfed0": {}
+      }
+    }
+  }
+}
