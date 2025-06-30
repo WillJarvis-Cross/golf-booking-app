@@ -15,9 +15,15 @@ exports.handler = async (event) => {
         body: JSON.stringify({ message: 'Method is required' }),
       }
     }
-    const body = JSON.parse(event.body)
 
     if (method === 'POST') {
+      if (!event.body) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ message: 'Body is required for POST' }),
+        }
+      }
+      const body = JSON.parse(event.body)
       const item = body?.item
       const tableName = body?.tableName
       if (!item) {
@@ -51,34 +57,80 @@ exports.handler = async (event) => {
     }
 
     else if (method === 'GET') {
-      const { keyName, keyValue } = event.queryStringParameters || {}
+      const tableName = event.rawPath.split('/')[1]
+      const query = event.queryStringParameters || {}
 
-      if (!keyName || !keyValue) {
+      const queryKeys = Object.keys(query)
+
+      // 🔸 Case 1: No query parameters — scan entire table
+      if (queryKeys.length === 0) {
+        const scanParams = new ScanCommand({ TableName: tableName })
+        const result = await dynamoDb.send(scanParams)
+
         return {
-          statusCode: 400,
-          body: JSON.stringify({ message: 'keyName and keyValue are required for GET' }),
+          statusCode: 200,
+          body: JSON.stringify(result.Items || []),
         }
       }
 
-      const params = new GetCommand({
-        TableName: tableName,
-        Key: {
-          [keyName]: keyValue,
-        },
-      })
+      // 🔸 Case 2: One query param — treat it as PK
+      if (queryKeys.length === 1) {
+        const keyName = queryKeys[0]
+        const keyValue = query[keyName]
 
-      const result = await dynamoDb.send(params)
+        const getParams = new GetCommand({
+          TableName: tableName,
+          Key: { [keyName]: keyValue },
+        })
 
-      if (!result.Item) {
+        const result = await dynamoDb.send(getParams)
+
+        if (!result.Item) {
+          return {
+            statusCode: 404,
+            body: JSON.stringify({ message: 'Item not found' }),
+          }
+        }
+
         return {
-          statusCode: 404,
-          body: JSON.stringify({ message: 'Item not found' }),
+          statusCode: 200,
+          body: JSON.stringify(result.Item),
         }
       }
 
-      return {
-        statusCode: 200,
-        body: JSON.stringify(result.Item),
+      // 🔸 Case 3: PK + additional attributes — return partial item
+      if (queryKeys.length === 2) {
+        const pkName = queryKeys[0]
+        const pkValue = query[pkName]
+
+        const fieldName = queryKeys[1]
+        const fieldValue = query[fieldName]
+
+        const getParams = new GetCommand({
+          TableName: tableName,
+          Key: { [pkName]: pkValue },
+        })
+
+        const result = await dynamoDb.send(getParams)
+
+        if (!result.Item) {
+          return {
+            statusCode: 404,
+            body: JSON.stringify({ message: 'Item not found' }),
+          }
+        }
+        const partialItem = {}
+        const fieldsToReturn = fieldValue.split(',')
+        fieldsToReturn.forEach(attr => {
+          if (result.Item[attr] !== undefined) {
+            partialItem[attr] = result.Item[attr]
+          }
+        });
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify(partialItem),
+        }
       }
     }
 

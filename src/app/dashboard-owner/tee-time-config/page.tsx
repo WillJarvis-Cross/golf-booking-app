@@ -1,7 +1,8 @@
-'use client'
+"use client";
 
-import { useState } from 'react';
-import { Button, TextField, Heading } from '@aws-amplify/ui-react';
+import { useState } from "react";
+import { Button, TextField, Heading } from "@aws-amplify/ui-react";
+import { useAuth } from "@/app/context/AuthContext";
 
 interface TeeTimeConfig {
   courseName: string;
@@ -14,10 +15,12 @@ interface TeeTimeConfig {
 }
 
 export default function TeeTimeConfigPage() {
+  const { user } = useAuth();
+  console.log("Current user:", user);
   const [config, setConfig] = useState<TeeTimeConfig>({
-    courseName: '',
-    startTime: '',
-    endTime: '',
+    courseName: "",
+    startTime: "",
+    endTime: "",
     intervalMinutes: 15,
     morningPrice: 50,
     afternoonPrice: 70,
@@ -30,39 +33,45 @@ export default function TeeTimeConfigPage() {
     const { name, value } = e.target;
     setConfig((prev) => ({
       ...prev,
-      [name]: name === 'intervalMinutes' || name.includes('Price') ? parseInt(value) : value,
+      [name]:
+        name === "intervalMinutes" || name.includes("Price")
+          ? parseInt(value)
+          : value,
     }));
   };
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('https://your-api-gateway-url/save-course-config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          managerId: 'manager-id-from-cognito', // Replace with the actual manager ID from Cognito
-          courseName: config.courseName,
-          startTime: config.startTime,
-          endTime: config.endTime,
-          intervalMinutes: config.intervalMinutes,
-          morningPrice: config.morningPrice,
-          afternoonPrice: config.afternoonPrice,
-          eveningPrice: config.eveningPrice,
-        }),
-      });
-  
+      const response = await fetch(
+        "https://your-api-gateway-url/save-course-config",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            managerId: "manager-id-from-cognito", // Replace with the actual manager ID from Cognito
+            courseName: config.courseName,
+            startTime: config.startTime,
+            endTime: config.endTime,
+            intervalMinutes: config.intervalMinutes,
+            morningPrice: config.morningPrice,
+            afternoonPrice: config.afternoonPrice,
+            eveningPrice: config.eveningPrice,
+          }),
+        }
+      );
+
       if (!response.ok) {
-        throw new Error('Failed to save configuration');
+        throw new Error("Failed to save configuration");
       }
-  
+
       const data = await response.json();
-      console.log('Configuration saved:', data);
-      setMessage('Configuration saved successfully!');
+      console.log("Configuration saved:", data);
+      setMessage("Configuration saved successfully!");
     } catch (error) {
-      console.error('Error saving configuration:', error);
-      setMessage('Failed to save configuration.');
+      console.error("Error saving configuration:", error);
+      setMessage("Failed to save configuration.");
     }
   };
 
