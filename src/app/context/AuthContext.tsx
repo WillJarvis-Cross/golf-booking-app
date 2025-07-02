@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     getCurrentUser()
       .then((currentUser) => {
-        // Map the email from signInDetails.loginId
         const mappedUser = {
           ...currentUser,
           email: currentUser?.signInDetails?.loginId || null,
@@ -34,25 +33,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => setUser(null));
 
-    const listener = (data: any) => {
-      switch (data.payload.event) {
+    const unsubscribe = Hub.listen("auth", (data) => {
+      const { payload } = data;
+
+      switch (payload.event) {
         case "signedIn":
-          getCurrentUser().then((currentUser) => {
-            const mappedUser = {
-              ...currentUser,
-              email: currentUser?.signInDetails?.loginId || null,
-            };
-            setUser(mappedUser);
-          });
+          getCurrentUser()
+            .then((currentUser) => {
+              const mappedUser = {
+                ...currentUser,
+                email: currentUser?.signInDetails?.loginId || null,
+              };
+              setUser(mappedUser);
+            })
+            .catch(() => setUser(null));
           break;
         case "signedOut":
           setUser(null);
           break;
       }
-    };
+    });
 
-    Hub.listen("auth", listener);
-    return () => Hub.remove("auth", listener);
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (

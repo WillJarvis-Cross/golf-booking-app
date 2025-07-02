@@ -16,7 +16,6 @@ interface TeeTimeConfig {
 
 export default function TeeTimeConfigPage() {
   const { user } = useAuth();
-  console.log("Current user:", user);
   const [config, setConfig] = useState<TeeTimeConfig>({
     courseName: "",
     startTime: "",
@@ -50,7 +49,7 @@ export default function TeeTimeConfigPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            managerId: "manager-id-from-cognito", // Replace with the actual manager ID from Cognito
+            managerId: "manager-id-from-cognito",
             courseName: config.courseName,
             startTime: config.startTime,
             endTime: config.endTime,
@@ -67,7 +66,6 @@ export default function TeeTimeConfigPage() {
       }
 
       const data = await response.json();
-      console.log("Configuration saved:", data);
       setMessage("Configuration saved successfully!");
     } catch (error) {
       console.error("Error saving configuration:", error);

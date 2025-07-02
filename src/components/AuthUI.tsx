@@ -1,17 +1,25 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
-import { signIn, signOut, signUp, confirmSignUp } from "aws-amplify/auth";
+import { useState, useEffect, ChangeEvent } from "react";
+import {
+  signIn,
+  signOut,
+  signUp,
+  confirmSignUp,
+  fetchAuthSession,
+  getCurrentUser,
+  fetchUserAttributes,
+} from "aws-amplify/auth";
 import { useAuth } from "../app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button, TextField, Heading, SelectField } from "@aws-amplify/ui-react";
-import { addToDynamoDB } from "@/api/dynamo";
+import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
 
 interface FormState {
-  email: string; // Use email as the username
+  email: string;
   password: string;
-  userType: "user" | "owner" | ""; // Define user types
-  code?: string; // Add a field for the confirmation code
+  userType: "user" | "owner" | "";
+  code?: string;
 }
 
 export default function AuthUI() {
@@ -23,44 +31,69 @@ export default function AuthUI() {
     userType: "",
   });
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false); // Track if we're in the confirmation step
+  const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState("");
 
-  const onChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormState({ ...formState, [e.target.name]: e.target.value });
   };
 
-  async function handleSignIn() {
-    try {
-      const user = await signIn({
-        username: formState.email,
-        password: formState.password,
-      }); // Use email as username
-      console.log("Sign in successful:", user);
-      setUser(user);
-      setError("");
-      await addToDynamoDB("user-info", {
-        email: formState.email,
-        userType: formState.userType,
-      });
-      if (formState.userType === "owner") {
+  useEffect(() => {
+    if (user) {
+      const userType = user.attributes?.["custom:userType"];
+      if (userType === "owner") {
         router.push("/dashboard-owner");
       } else {
         router.push("/dashboard-user");
       }
-    } catch (err: any) {
-      setError(err.message);
+    }
+  }, [user, router]);
+
+  async function handleSignIn() {
+    try {
+      await signIn({ username: formState.email, password: formState.password });
+
+      const userInfo = (await getFromDynamoDB(
+        "user-info",
+        formState.email
+      )) as { userType: string };
+      setUser(userInfo);
+
+      if (userInfo.userType === "owner") {
+        router.push("/dashboard-owner");
+      } else {
+        router.push("/dashboard-user");
+      }
+    } catch (err) {
+      console.error("Sign-in error:", err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     }
   }
 
   async function handleSignUp() {
     try {
       await signUp({
-        username: formState.email, // Use email as username
+        username: formState.email,
         password: formState.password,
+        options: {
+          userAttributes: {
+            email: formState.email,
+            ["custom:userType"]: formState.userType,
+          } as Record<string, string>,
+        },
       });
+
+      await addToDynamoDB("user-info", {
+        email: formState.email,
+        userType: formState.userType,
+      });
+
       setIsSignUp(false);
-      setIsConfirming(true); // Move to the confirmation step
+      setIsConfirming(true);
       setError("Check your email for the verification code.");
     } catch (err: any) {
       setError(err.message);
@@ -72,13 +105,8 @@ export default function AuthUI() {
       await confirmSignUp({
         username: formState.email,
         confirmationCode: formState.code || "",
-      }); // Use email as username
-      setIsConfirming(false); // Move back to sign-in step
-      if (formState.userType === "owner") {
-        router.push("/dashboard-owner");
-      } else {
-        router.push("/dashboard-user");
-      }
+      });
+      setIsConfirming(false);
       setError("Account confirmed! You can now sign in.");
     } catch (err: any) {
       setError(err.message);
@@ -89,18 +117,10 @@ export default function AuthUI() {
     try {
       await signOut();
       setUser(null);
+      router.push("/");
     } catch (err: any) {
       setError(err.message);
     }
-  }
-
-  if (user) {
-    return (
-      <div>
-        <Heading level={4}>Welcome, {user.attributes?.email || "User"}</Heading>
-        <Button onClick={handleSignOut}>Sign Out</Button>
-      </div>
-    );
   }
 
   if (isConfirming) {
@@ -119,11 +139,49 @@ export default function AuthUI() {
     );
   }
 
+  if (isSignUp) {
+    return (
+      <div>
+        <Heading level={3}>Sign Up</Heading>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <TextField
+          label="Email"
+          name="email"
+          type="email"
+          onChange={onChange}
+          value={formState.email}
+        />
+        <TextField
+          label="Password"
+          name="password"
+          type="password"
+          onChange={onChange}
+          value={formState.password}
+        />
+        <SelectField
+          label="User Type"
+          name="userType"
+          onChange={onChange}
+          value={formState.userType || "user"}
+        >
+          <option value="user">User</option>
+          <option value="owner">Owner</option>
+        </SelectField>
+        <Button onClick={handleSignUp}>Sign Up</Button>
+        <p
+          onClick={() => setIsSignUp(false)}
+          style={{ cursor: "pointer", color: "blue" }}
+        >
+          Have an account? Sign In
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <Heading level={3}>{isSignUp ? "Sign Up" : "Sign In"}</Heading>
+      <Heading level={3}>Sign In</Heading>
       {error && <p style={{ color: "red" }}>{error}</p>}
-
       <TextField
         label="Email"
         name="email"
@@ -138,29 +196,12 @@ export default function AuthUI() {
         onChange={onChange}
         value={formState.password}
       />
-      {isSignUp && (
-        <SelectField
-          label="User Type"
-          name="userType"
-          onChange={(e) =>
-            setFormState({ ...formState, [e.target.name]: e.target.value })
-          }
-          value={formState.userType || "user"}
-        >
-          <option value="user">User</option>
-          <option value="owner">Owner</option>
-        </SelectField>
-      )}
-      <Button onClick={isSignUp ? handleSignUp : handleSignIn}>
-        {isSignUp ? "Sign Up" : "Sign In"}
-      </Button>
+      <Button onClick={handleSignIn}>Sign In</Button>
       <p
-        onClick={() => setIsSignUp(!isSignUp)}
+        onClick={() => setIsSignUp(true)}
         style={{ cursor: "pointer", color: "blue" }}
       >
-        {isSignUp
-          ? "Have an account? Sign In"
-          : "Don't have an account? Sign Up"}
+        Don't have an account? Sign Up
       </p>
     </div>
   );
