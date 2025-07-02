@@ -12,8 +12,10 @@ import {
 } from "aws-amplify/auth";
 import { useAuth } from "../app/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { Button, TextField, Heading, SelectField } from "@aws-amplify/ui-react";
+import { Button, Heading, SelectField } from "@aws-amplify/ui-react";
 import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
+import Container from "@/ui-components/Container";
+import TextField from "@/ui-components/TextField";
 
 interface FormState {
   email: string;
@@ -125,84 +127,110 @@ export default function AuthUI() {
 
   if (isConfirming) {
     return (
-      <div>
-        <Heading level={3}>Confirm Sign Up</Heading>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+      <Container title="Confirm Sign Up">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <TextField
           label="Confirmation Code"
           name="code"
-          onChange={onChange}
           value={formState.code || ""}
+          onChange={onChange}
+          placeholder="Enter your confirmation code"
         />
-        <Button onClick={handleConfirmSignUp}>Confirm</Button>
-      </div>
+        <button
+          onClick={handleConfirmSignUp}
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+        >
+          Confirm
+        </button>
+      </Container>
     );
   }
 
   if (isSignUp) {
     return (
-      <div>
-        <Heading level={3}>Sign Up</Heading>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+      <Container title="Sign Up">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <TextField
           label="Email"
           name="email"
-          type="email"
-          onChange={onChange}
           value={formState.email}
+          onChange={onChange}
+          placeholder="Enter your email"
+          type="email"
         />
         <TextField
           label="Password"
           name="password"
-          type="password"
-          onChange={onChange}
           value={formState.password}
-        />
-        <SelectField
-          label="User Type"
-          name="userType"
           onChange={onChange}
-          value={formState.userType || "user"}
+          placeholder="Enter your password"
+          type="password"
+        />
+        <div className="mb-4">
+          <label
+            htmlFor="userType"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            User Type
+          </label>
+          <select
+            name="userType"
+            id="userType"
+            onChange={onChange}
+            value={formState.userType || "user"}
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="user">User</option>
+            <option value="owner">Owner</option>
+          </select>
+        </div>
+        <button
+          onClick={handleSignUp}
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
         >
-          <option value="user">User</option>
-          <option value="owner">Owner</option>
-        </SelectField>
-        <Button onClick={handleSignUp}>Sign Up</Button>
+          Sign Up
+        </button>
         <p
           onClick={() => setIsSignUp(false)}
-          style={{ cursor: "pointer", color: "blue" }}
+          className="text-blue-500 mt-4 cursor-pointer"
         >
           Have an account? Sign In
         </p>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div>
-      <Heading level={3}>Sign In</Heading>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <Container title="Sign In">
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       <TextField
         label="Email"
         name="email"
-        type="email"
-        onChange={onChange}
         value={formState.email}
+        onChange={onChange}
+        placeholder="Enter your email"
+        type="email"
       />
       <TextField
         label="Password"
         name="password"
-        type="password"
-        onChange={onChange}
         value={formState.password}
+        onChange={onChange}
+        placeholder="Enter your password"
+        type="password"
       />
-      <Button onClick={handleSignIn}>Sign In</Button>
+      <button
+        onClick={handleSignIn}
+        className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+      >
+        Sign In
+      </button>
       <p
         onClick={() => setIsSignUp(true)}
-        style={{ cursor: "pointer", color: "blue" }}
+        className="text-blue-500 mt-4 cursor-pointer"
       >
         Don't have an account? Sign Up
       </p>
-    </div>
+    </Container>
   );
 }

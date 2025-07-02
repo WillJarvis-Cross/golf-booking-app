@@ -1,22 +1,13 @@
-/* Import Tailwind CSS */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Root variables for light mode */
-:root {
-  --background: #f9fafb; /* Light gray background */
-  --foreground: #1f2937; /* Dark gray text */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
 }
 
-/* Global body styling */
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter', Arial, sans-serif; /* Modern sans-serif font */
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
 }
