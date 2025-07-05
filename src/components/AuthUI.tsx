@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
+import styles from "./AuthUI.module.css";
 import {
   signIn,
   signOut,
@@ -12,10 +13,10 @@ import {
 } from "aws-amplify/auth";
 import { useAuth } from "../app/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { Button, Heading, SelectField } from "@aws-amplify/ui-react";
 import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
 import Container from "@/ui-components/Container";
 import TextField from "@/ui-components/TextField";
+import Button from "@/ui-components/Button";
 
 interface FormState {
   email: string;
@@ -41,14 +42,28 @@ export default function AuthUI() {
   };
 
   useEffect(() => {
-    if (user) {
-      const userType = user.attributes?.["custom:userType"];
-      if (userType === "owner") {
-        router.push("/dashboard-owner");
-      } else {
-        router.push("/dashboard-user");
+    const fetchUserInfo = async () => {
+      if (user) {
+        try {
+          const userInfo = (await getFromDynamoDB("user-info", user.email)) as {
+            userType: string;
+          };
+          console.log(user, userInfo);
+          setUser(userInfo);
+
+          if (userInfo.userType === "owner") {
+            router.push("/dashboard-owner");
+          } else {
+            router.push("/dashboard-user");
+          }
+        } catch (err) {
+          console.error("Error fetching user info:", err);
+          setError("Failed to fetch user information.");
+        }
       }
-    }
+    };
+
+    fetchUserInfo();
   }, [user, router]);
 
   async function handleSignIn() {
@@ -60,7 +75,7 @@ export default function AuthUI() {
         formState.email
       )) as { userType: string };
       setUser(userInfo);
-
+      console.log(userInfo);
       if (userInfo.userType === "owner") {
         router.push("/dashboard-owner");
       } else {
@@ -149,7 +164,7 @@ export default function AuthUI() {
   if (isSignUp) {
     return (
       <Container title="Sign Up">
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {error && <p className={styles.error}>{error}</p>}
         <TextField
           label="Email"
           name="email"
@@ -166,11 +181,8 @@ export default function AuthUI() {
           placeholder="Enter your password"
           type="password"
         />
-        <div className="mb-4">
-          <label
-            htmlFor="userType"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
+        <div className={styles.fieldWrapper}>
+          <label htmlFor="userType" className={styles.label}>
             User Type
           </label>
           <select
@@ -178,22 +190,14 @@ export default function AuthUI() {
             id="userType"
             onChange={onChange}
             value={formState.userType || "user"}
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={styles.select}
           >
             <option value="user">User</option>
             <option value="owner">Owner</option>
           </select>
         </div>
-        <button
-          onClick={handleSignUp}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-        >
-          Sign Up
-        </button>
-        <p
-          onClick={() => setIsSignUp(false)}
-          className="text-blue-500 mt-4 cursor-pointer"
-        >
+        <Button onClick={handleSignUp} label="Sign Up" />
+        <p onClick={() => setIsSignUp(false)} className={styles.clickableText}>
           Have an account? Sign In
         </p>
       </Container>
@@ -219,16 +223,8 @@ export default function AuthUI() {
         placeholder="Enter your password"
         type="password"
       />
-      <button
-        onClick={handleSignIn}
-        className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-      >
-        Sign In
-      </button>
-      <p
-        onClick={() => setIsSignUp(true)}
-        className="text-blue-500 mt-4 cursor-pointer"
-      >
+      <Button onClick={handleSignIn} label="Sign In" />
+      <p onClick={() => setIsSignUp(true)} className={styles.clickableText}>
         Don't have an account? Sign Up
       </p>
     </Container>

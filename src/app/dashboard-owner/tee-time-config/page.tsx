@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button, TextField, Heading } from "@aws-amplify/ui-react";
 import { useAuth } from "@/app/context/AuthContext";
+import TextField from "@/ui-components/TextField";
+import Button from "@/ui-components/Button";
+import styles from "./TeeTimeConfigPage.module.css"; // Import the CSS module
+import NumberField from "@/ui-components/NumberField";
 
 interface TeeTimeConfig {
   courseName: string;
@@ -49,7 +52,7 @@ export default function TeeTimeConfigPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            managerId: "manager-id-from-cognito",
+            managerId: user?.attributes?.sub, // Use Cognito user ID
             courseName: config.courseName,
             startTime: config.startTime,
             endTime: config.endTime,
@@ -74,12 +77,18 @@ export default function TeeTimeConfigPage() {
   };
 
   return (
-    <div className="p-8">
-      <Heading level={3} className="mb-4">
-        Tee Time Configuration
-      </Heading>
-      {message && <p className="mb-4">{message}</p>}
-      <form className="space-y-4">
+    <div className={styles.container}>
+      <h1 className={styles.heading}>Tee Time Configuration</h1>
+      {message && (
+        <p
+          className={
+            message.includes("successfully") ? styles.message : styles.error
+          }
+        >
+          {message}
+        </p>
+      )}
+      <form className={styles.form}>
         <TextField
           label="Course Name"
           name="courseName"
@@ -87,51 +96,49 @@ export default function TeeTimeConfigPage() {
           onChange={handleChange}
           placeholder="Enter the name of the golf course"
         />
-        <TextField
-          label="Start Time"
-          name="startTime"
-          type="time"
-          value={config.startTime}
-          onChange={handleChange}
-        />
-        <TextField
-          label="End Time"
-          name="endTime"
-          type="time"
-          value={config.endTime}
-          onChange={handleChange}
-        />
-        <TextField
-          label="Interval Between Tee Times (minutes)"
-          name="intervalMinutes"
-          type="number"
-          value={config.intervalMinutes}
-          onChange={handleChange}
-        />
-        <TextField
-          label="Morning Price"
-          name="morningPrice"
-          type="number"
-          value={config.morningPrice}
-          onChange={handleChange}
-        />
-        <TextField
-          label="Afternoon Price"
-          name="afternoonPrice"
-          type="number"
-          value={config.afternoonPrice}
-          onChange={handleChange}
-        />
-        <TextField
-          label="Evening Price"
-          name="eveningPrice"
-          type="number"
-          value={config.eveningPrice}
-          onChange={handleChange}
-        />
-        <Button onClick={handleSubmit} type="button">
-          Save Configuration
-        </Button>
+        <div className={styles.horizontalFields}>
+          <TextField
+            label="Start Time"
+            name="startTime"
+            type="time"
+            value={config.startTime}
+            onChange={handleChange}
+          />
+          <TextField
+            label="End Time"
+            name="endTime"
+            type="time"
+            value={config.endTime}
+            onChange={handleChange}
+          />
+          <NumberField
+            label="Interval Between Tee Times (minutes)"
+            name="intervalMinutes"
+            value={config.intervalMinutes}
+            onChange={handleChange}
+          />
+        </div>
+        <div className={styles.horizontalFields}>
+          <NumberField
+            label="Morning Price"
+            name="morningPrice"
+            value={config.morningPrice}
+            onChange={handleChange}
+          />
+          <NumberField
+            label="Afternoon Price"
+            name="afternoonPrice"
+            value={config.afternoonPrice}
+            onChange={handleChange}
+          />
+          <NumberField
+            label="Evening Price"
+            name="eveningPrice"
+            value={config.eveningPrice}
+            onChange={handleChange}
+          />
+        </div>
+        <Button onClick={handleSubmit} label="Save Configuration" />
       </form>
     </div>
   );

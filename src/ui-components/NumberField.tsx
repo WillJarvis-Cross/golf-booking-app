@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "./NumberField.module.css";
 
 interface NumberFieldProps {
   label: string;
@@ -24,11 +25,8 @@ const NumberField: React.FC<NumberFieldProps> = ({
   required = false,
 }) => {
   return (
-    <div className="mb-4">
-      <label
-        htmlFor={name}
-        className="block text-sm font-medium text-gray-700 mb-2"
-      >
+    <div className={styles.fieldWrapper}>
+      <label htmlFor={name} className={styles.label}>
         {label}
       </label>
       <input
@@ -42,7 +40,7 @@ const NumberField: React.FC<NumberFieldProps> = ({
         max={max}
         step={step}
         required={required}
-        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className={styles.input}
       />
     </div>
   );
