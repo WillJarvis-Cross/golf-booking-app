@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
-import styles from "./AuthUI.module.css";
-import {
-  signIn,
-  signOut,
-  signUp,
-  confirmSignUp,
-  fetchAuthSession,
-  getCurrentUser,
-  fetchUserAttributes,
-} from "aws-amplify/auth";
+import { signIn, signOut, signUp, confirmSignUp } from "aws-amplify/auth";
 import { useAuth } from "../app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
@@ -48,7 +39,6 @@ export default function AuthUI() {
           const userInfo = (await getFromDynamoDB("user-info", user.email)) as {
             userType: string;
           };
-          console.log(user, userInfo);
           setUser(userInfo);
 
           if (userInfo.userType === "owner") {
@@ -75,7 +65,7 @@ export default function AuthUI() {
         formState.email
       )) as { userType: string };
       setUser(userInfo);
-      console.log(userInfo);
+
       if (userInfo.userType === "owner") {
         router.push("/dashboard-owner");
       } else {
@@ -83,11 +73,7 @@ export default function AuthUI() {
       }
     } catch (err) {
       console.error("Sign-in error:", err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred.");
-      }
+      setError("An unknown error occurred.");
     }
   }
 
@@ -143,7 +129,7 @@ export default function AuthUI() {
   if (isConfirming) {
     return (
       <Container title="Confirm Sign Up">
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {error && <p className="alert alert-danger mb-4">{error}</p>}
         <TextField
           label="Confirmation Code"
           name="code"
@@ -151,12 +137,7 @@ export default function AuthUI() {
           onChange={onChange}
           placeholder="Enter your confirmation code"
         />
-        <button
-          onClick={handleConfirmSignUp}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-        >
-          Confirm
-        </button>
+        <Button onClick={handleConfirmSignUp} label="Confirm" />
       </Container>
     );
   }
@@ -164,7 +145,7 @@ export default function AuthUI() {
   if (isSignUp) {
     return (
       <Container title="Sign Up">
-        {error && <p className={styles.error}>{error}</p>}
+        {error && <p className="alert alert-danger mb-4">{error}</p>}
         <TextField
           label="Email"
           name="email"
@@ -181,8 +162,8 @@ export default function AuthUI() {
           placeholder="Enter your password"
           type="password"
         />
-        <div className={styles.fieldWrapper}>
-          <label htmlFor="userType" className={styles.label}>
+        <div className="mb-3">
+          <label htmlFor="userType" className="form-label">
             User Type
           </label>
           <select
@@ -190,14 +171,18 @@ export default function AuthUI() {
             id="userType"
             onChange={onChange}
             value={formState.userType || "user"}
-            className={styles.select}
+            className="form-select"
           >
             <option value="user">User</option>
             <option value="owner">Owner</option>
           </select>
         </div>
         <Button onClick={handleSignUp} label="Sign Up" />
-        <p onClick={() => setIsSignUp(false)} className={styles.clickableText}>
+        <p
+          onClick={() => setIsSignUp(false)}
+          className="text-primary mt-3 text-center"
+          style={{ cursor: "pointer" }}
+        >
           Have an account? Sign In
         </p>
       </Container>
@@ -206,7 +191,7 @@ export default function AuthUI() {
 
   return (
     <Container title="Sign In">
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {error && <p className="alert alert-danger mb-4">{error}</p>}
       <TextField
         label="Email"
         name="email"
@@ -224,7 +209,11 @@ export default function AuthUI() {
         type="password"
       />
       <Button onClick={handleSignIn} label="Sign In" />
-      <p onClick={() => setIsSignUp(true)} className={styles.clickableText}>
+      <p
+        onClick={() => setIsSignUp(true)}
+        className="text-primary mt-3 text-center"
+        style={{ cursor: "pointer" }}
+      >
         Don't have an account? Sign Up
       </p>
     </Container>

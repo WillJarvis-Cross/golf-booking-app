@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import TextField from "@/ui-components/TextField";
 import Button from "@/ui-components/Button";
-import styles from "./TeeTimeConfigPage.module.css"; // Import the CSS module
 import NumberField from "@/ui-components/NumberField";
 
 interface TeeTimeConfig {
@@ -77,68 +76,84 @@ export default function TeeTimeConfigPage() {
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.heading}>Tee Time Configuration</h1>
+    <div className="container mt-4">
+      <h1 className="mb-4">Tee Time Configuration</h1>
       {message && (
         <p
-          className={
-            message.includes("successfully") ? styles.message : styles.error
-          }
+          className={`alert ${
+            message.includes("successfully") ? "alert-success" : "alert-danger"
+          }`}
         >
           {message}
         </p>
       )}
-      <form className={styles.form}>
-        <TextField
-          label="Course Name"
-          name="courseName"
-          value={config.courseName}
-          onChange={handleChange}
-          placeholder="Enter the name of the golf course"
-        />
-        <div className={styles.horizontalFields}>
+      <form>
+        <div className="mb-3">
           <TextField
-            label="Start Time"
-            name="startTime"
-            type="time"
-            value={config.startTime}
+            label="Course Name"
+            name="courseName"
+            value={config.courseName}
             onChange={handleChange}
-          />
-          <TextField
-            label="End Time"
-            name="endTime"
-            type="time"
-            value={config.endTime}
-            onChange={handleChange}
-          />
-          <NumberField
-            label="Interval Between Tee Times (minutes)"
-            name="intervalMinutes"
-            value={config.intervalMinutes}
-            onChange={handleChange}
+            placeholder="Enter the name of the golf course"
           />
         </div>
-        <div className={styles.horizontalFields}>
-          <NumberField
-            label="Morning Price"
-            name="morningPrice"
-            value={config.morningPrice}
-            onChange={handleChange}
-          />
-          <NumberField
-            label="Afternoon Price"
-            name="afternoonPrice"
-            value={config.afternoonPrice}
-            onChange={handleChange}
-          />
-          <NumberField
-            label="Evening Price"
-            name="eveningPrice"
-            value={config.eveningPrice}
-            onChange={handleChange}
-          />
+        <div className="row mb-3">
+          <div className="col-md-4">
+            <TextField
+              label="Start Time"
+              name="startTime"
+              type="time"
+              value={config.startTime}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="col-md-4">
+            <TextField
+              label="End Time"
+              name="endTime"
+              type="time"
+              value={config.endTime}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="col-md-4">
+            <NumberField
+              label="Interval Between Tee Times (minutes)"
+              name="intervalMinutes"
+              value={config.intervalMinutes}
+              onChange={handleChange}
+            />
+          </div>
         </div>
-        <Button onClick={handleSubmit} label="Save Configuration" />
+        <div className="row mb-3">
+          <div className="col-md-4">
+            <NumberField
+              label="Morning Price"
+              name="morningPrice"
+              value={config.morningPrice}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="col-md-4">
+            <NumberField
+              label="Afternoon Price"
+              name="afternoonPrice"
+              value={config.afternoonPrice}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="col-md-4">
+            <NumberField
+              label="Evening Price"
+              name="eveningPrice"
+              value={config.eveningPrice}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+        <div className="d-flex justify-content-end">
+          <Button onClick={handleSubmit} label="Save Configuration" />
+        </div>
       </form>
     </div>
   );

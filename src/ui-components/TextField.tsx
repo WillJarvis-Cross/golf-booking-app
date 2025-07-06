@@ -1,4 +1,4 @@
-import styles from "./TextField.module.css";
+import React from "react";
 
 interface TextFieldProps {
   label?: string;
@@ -18,15 +18,20 @@ const TextField: React.FC<TextFieldProps> = ({
   type = "text",
 }) => {
   return (
-    <div className={styles.fieldWrapper}>
-      {label && <label className={styles.label}>{label}</label>}
+    <div className="mb-3">
+      {label && (
+        <label htmlFor={name} className="form-label">
+          {label}
+        </label>
+      )}
       <input
+        id={name}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         type={type}
-        className={styles.input}
+        className="form-control"
       />
     </div>
   );

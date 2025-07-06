@@ -1,4 +1,4 @@
-import styles from "./Button.module.css";
+import React from "react";
 
 interface ButtonProps {
   label: string;
@@ -20,9 +20,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`${styles.button} ${
-        disabled ? styles.disabled : ""
-      } ${className}`}
+      className={`btn btn-primary ${disabled ? "disabled" : ""} ${className}`}
     >
       {label}
     </button>
