@@ -7,9 +7,12 @@ import Button from "@/ui-components/Button";
 import NumberField from "@/ui-components/NumberField";
 import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
 import { amplifyUuid } from "@aws-amplify/core/internals/utils";
-import axios from "axios";
+import InfoOutlineIcon from "@mui/icons-material/InfoOutline";
+import { Tooltip } from "@mui/material";
+import { GenerateInitialTeeTimes } from "@/api/generateInitialTeeTimes";
 
-interface TeeTimeConfig {
+interface GolfCourseConfig {
+  courseId: string;
   courseName: string;
   startTime: string;
   endTime: string;
@@ -21,7 +24,8 @@ interface TeeTimeConfig {
 
 export default function TeeTimeConfigPage() {
   const { user } = useAuth();
-  const [config, setConfig] = useState<TeeTimeConfig>({
+  const [config, setConfig] = useState<GolfCourseConfig>({
+    courseId: "",
     courseName: "",
     startTime: "",
     endTime: "",
@@ -36,21 +40,26 @@ export default function TeeTimeConfigPage() {
   useEffect(() => {
     if (!user?.userId) return;
 
-    // const fetchUserData = async () => {
-    //   try {
-    //     const result = await getFromDynamoDB("golf-course-config", user.userId);
-    //     if (result) {
-    //       setConfig((prev) => ({
-    //         ...prev,
-    //         ...result,
-    //       }));
-    //     }
-    //   } catch (err) {
-    //     console.error("Failed to load user data:", err);
-    //   }
-    // };
+    const fetchUserData = async () => {
+      try {
+        const result = await getFromDynamoDB("golf-course-config", user.userId);
+        console.log("Fetched config:", result);
+        if (result) {
+          if (Array.isArray(result)) {
+            setConfig((prev) => ({
+              ...prev,
+              ...result[0],
+            }));
+          } else {
+            //handle this
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user data:", err);
+      }
+    };
 
-    // fetchUserData();
+    fetchUserData();
   }, [user?.userId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,10 +79,10 @@ export default function TeeTimeConfigPage() {
       //   "https://kj9n1dhik2.execute-api.us-east-2.amazonaws.com/prod/courses"
       // );
       // console.log("API Response:", res.data);
-      const courseId = amplifyUuid();
-      await addToDynamoDB("golf-courses", {
+      const courseId = config.courseId || amplifyUuid();
+      await addToDynamoDB("golf-course-config", {
         city: "Placeholder City",
-        course_id: courseId,
+        courseId: courseId,
         userId: user.userId ?? "",
         courseName: config.courseName,
         startTime: config.startTime,
@@ -83,6 +92,12 @@ export default function TeeTimeConfigPage() {
         afternoonPrice: config.afternoonPrice,
         eveningPrice: config.eveningPrice,
       });
+      await GenerateInitialTeeTimes(
+        courseId,
+        config.startTime,
+        config.endTime,
+        config.intervalMinutes
+      );
 
       setMessage("Configuration saved successfully!");
     } catch (error) {
@@ -167,8 +182,27 @@ export default function TeeTimeConfigPage() {
             />
           </div>
         </div>
+
         <div className="d-flex justify-content-end">
-          <Button onClick={handleSubmit} label="Save Configuration" />
+          <Tooltip
+            title={
+              config.courseId
+                ? "Updating your course details will not affect current tee times. Tee times added after will use this new config."
+                : "Tee times will be automatically generated based on the provided configuration."
+            }
+          >
+            <InfoOutlineIcon
+              style={{
+                marginRight: "10px",
+                cursor: "pointer",
+                alignItems: "center",
+              }}
+            />
+          </Tooltip>
+          <Button
+            onClick={handleSubmit}
+            label={`${config.courseId ? "Update" : "Save"} Configuration`}
+          />
         </div>
       </form>
     </div>
