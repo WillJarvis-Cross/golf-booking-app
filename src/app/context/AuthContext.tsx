@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .then((currentUser) => {
               const mappedUser = {
                 ...currentUser,
+                userId: currentUser?.userId || null,
                 email: currentUser?.signInDetails?.loginId || null,
               };
               setUser(mappedUser);

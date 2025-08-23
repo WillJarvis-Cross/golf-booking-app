@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import TextField from "@/ui-components/TextField";
 import Button from "@/ui-components/Button";
 import NumberField from "@/ui-components/NumberField";
+import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
+import { amplifyUuid } from "@aws-amplify/core/internals/utils";
+import axios from "axios";
 
 interface TeeTimeConfig {
   courseName: string;
@@ -30,6 +33,26 @@ export default function TeeTimeConfigPage() {
 
   const [message, setMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!user?.userId) return;
+
+    // const fetchUserData = async () => {
+    //   try {
+    //     const result = await getFromDynamoDB("golf-course-config", user.userId);
+    //     if (result) {
+    //       setConfig((prev) => ({
+    //         ...prev,
+    //         ...result,
+    //       }));
+    //     }
+    //   } catch (err) {
+    //     console.error("Failed to load user data:", err);
+    //   }
+    // };
+
+    // fetchUserData();
+  }, [user?.userId]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setConfig((prev) => ({
@@ -43,31 +66,24 @@ export default function TeeTimeConfigPage() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(
-        "https://your-api-gateway-url/save-course-config",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            managerId: user?.attributes?.sub, // Use Cognito user ID
-            courseName: config.courseName,
-            startTime: config.startTime,
-            endTime: config.endTime,
-            intervalMinutes: config.intervalMinutes,
-            morningPrice: config.morningPrice,
-            afternoonPrice: config.afternoonPrice,
-            eveningPrice: config.eveningPrice,
-          }),
-        }
-      );
+      // const res = await axios.get(
+      //   "https://kj9n1dhik2.execute-api.us-east-2.amazonaws.com/prod/courses"
+      // );
+      // console.log("API Response:", res.data);
+      const courseId = amplifyUuid();
+      await addToDynamoDB("golf-courses", {
+        city: "Placeholder City",
+        course_id: courseId,
+        userId: user.userId ?? "",
+        courseName: config.courseName,
+        startTime: config.startTime,
+        endTime: config.endTime,
+        intervalMinutes: config.intervalMinutes,
+        morningPrice: config.morningPrice,
+        afternoonPrice: config.afternoonPrice,
+        eveningPrice: config.eveningPrice,
+      });
 
-      if (!response.ok) {
-        throw new Error("Failed to save configuration");
-      }
-
-      const data = await response.json();
       setMessage("Configuration saved successfully!");
     } catch (error) {
       console.error("Error saving configuration:", error);

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
-import { signIn, signOut, signUp, confirmSignUp } from "aws-amplify/auth";
+import {
+  signIn,
+  signOut,
+  signUp,
+  confirmSignUp,
+  getCurrentUser,
+} from "aws-amplify/auth";
 import { useAuth } from "../app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { addToDynamoDB, getFromDynamoDB } from "@/api/dynamo";
@@ -13,6 +19,7 @@ interface FormState {
   email: string;
   password: string;
   userType: "user" | "owner" | "";
+  userId: string;
   code?: string;
 }
 
@@ -23,6 +30,7 @@ export default function AuthUI() {
     email: "",
     password: "",
     userType: "",
+    userId: "",
   });
   const [isSignUp, setIsSignUp] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -36,12 +44,16 @@ export default function AuthUI() {
     const fetchUserInfo = async () => {
       if (user) {
         try {
-          const userInfo = (await getFromDynamoDB("user-info", user.email)) as {
+          const userInfo = (await getFromDynamoDB(
+            "user-info",
+            user.userId
+          )) as {
             userType: string;
           };
           setUser(userInfo);
-
+          console.log("User info fetched:", userInfo);
           if (userInfo.userType === "owner") {
+            console.log("Redirvdkslard");
             router.push("/dashboard-owner");
           } else {
             router.push("/dashboard-user");
@@ -58,15 +70,20 @@ export default function AuthUI() {
 
   async function handleSignIn() {
     try {
+      console.log("Signing in with:", formState);
       await signIn({ username: formState.email, password: formState.password });
-
+      console.log("Sign-in successful");
+      const currentUser = await getCurrentUser();
+      console.log("Current user:", currentUser);
       const userInfo = (await getFromDynamoDB(
         "user-info",
-        formState.email
+        currentUser.userId
       )) as { userType: string };
+      console.log("User info from DynamoDB:", userInfo);
       setUser(userInfo);
 
       if (userInfo.userType === "owner") {
+        console.log("Redirecting to owner dashboard");
         router.push("/dashboard-owner");
       } else {
         router.push("/dashboard-user");
@@ -79,7 +96,7 @@ export default function AuthUI() {
 
   async function handleSignUp() {
     try {
-      await signUp({
+      const user = await signUp({
         username: formState.email,
         password: formState.password,
         options: {
@@ -89,8 +106,9 @@ export default function AuthUI() {
           } as Record<string, string>,
         },
       });
-
+      setFormState({ ...formState, userId: user.userId ?? "" });
       await addToDynamoDB("user-info", {
+        userId: user.userId,
         email: formState.email,
         userType: formState.userType,
       });
